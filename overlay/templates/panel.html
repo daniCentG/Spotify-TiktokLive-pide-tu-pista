@@ -1,0 +1,95 @@
+﻿<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Panel de Modos</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Arial, sans-serif;
+        background: #0f1b14;
+        color: #e9f6ef;
+        margin: 0;
+        padding: 24px;
+      }
+      .panel {
+        max-width: 720px;
+        margin: 0 auto;
+        background: #14251c;
+        border: 1px solid #1f3b2c;
+        border-radius: 12px;
+        padding: 20px 24px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      }
+      h1 {
+        margin: 0 0 12px 0;
+        font-size: 22px;
+      }
+      .desc {
+        margin-bottom: 16px;
+        color: #b6d6c4;
+      }
+      .mode {
+        display: block;
+        padding: 12px 14px;
+        margin-bottom: 12px;
+        border: 1px solid #234033;
+        border-radius: 10px;
+        background: #0f1d16;
+      }
+      .mode strong {
+        display: block;
+        margin-bottom: 6px;
+      }
+      .actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 16px;
+      }
+      button {
+        background: #1fa764;
+        color: #0a130f;
+        border: none;
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .message {
+        margin-top: 12px;
+        color: #9fe1bf;
+      }
+      .current {
+        margin-top: 8px;
+        color: #87cfa7;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="panel">
+      <h1>Panel de modos</h1>
+      <div class="desc">
+        Selecciona el modo que quieres usar en el live. El cambio se aplica al momento.
+      </div>
+      <form method="post">
+        <label class="mode">
+          <input type="radio" name="mode" value="donation" {% if current_mode == "donation" %}checked{% endif %} />
+          <strong>Modo 1 - Donación (regalos)</strong>
+          !play y !skip requieren regalo. Prioridad disponible con rosquilla.
+        </label>
+        <label class="mode">
+          <input type="radio" name="mode" value="free" {% if current_mode == "free" %}checked{% endif %} />
+          <strong>Modo 2 - Gratis para todos</strong>
+          !play libre para todos. !skip solo host.
+        </label>
+        <div class="actions">
+          <button type="submit">Guardar modo</button>
+        </div>
+      </form>
+      <div class="current">Modo actual: {{ current_mode }}</div>
+      {% if message %}
+      <div class="message">{{ message }}</div>
+      {% endif %}
+    </div>
+  </body>
+</html>

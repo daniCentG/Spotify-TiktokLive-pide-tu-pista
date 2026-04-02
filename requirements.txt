@@ -1,0 +1,4 @@
+TikTokLive
+spotipy
+flask
+python-dotenv

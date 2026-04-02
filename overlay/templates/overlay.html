@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TikTok Spotify Live Overlay</title>
+    <link rel="stylesheet" href="/static/style.css?v=4" />
+  </head>
+  <body>
+    <!-- Contenedor principal del overlay -->
+    <div class="overlay player">
+      <!-- Cabecera tipo reproductor -->
+      <header class="player-header">
+        <div class="player-center">
+          <div class="player-badge">LIVE</div>
+          <div class="player-title">
+            <div class="title">Solicitudes en vivo</div>
+          </div>
+        </div>
+        <div class="equalizer" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </header>
+
+      <!-- Barra decorativa tipo progreso -->
+      <div class="progress">
+        <div class="progress-fill"></div>
+      </div>
+
+      <div class="content-row">
+        <!-- Ahora suena -->
+        <section class="now-playing-section">
+          <div class="section-title">Ahora suena</div>
+          <div class="now-playing-slot" id="now-playing"></div>
+        </section>
+
+        <!-- Cola dinámica -->
+        <section class="queue-section">
+          <div class="section-title">Lista de Reproducción</div>
+          <div class="queue" id="queue"></div>
+        </section>
+      </div>
+
+      <!-- Comandos del modo activo -->
+      <section class="commands" id="commands-section" hidden>
+        <div class="commands-title">Como pedir canciones</div>
+        <ul id="commands-list"></ul>
+      </section>
+    </div>
+
+    <!-- Script para refrescar estado -->
+    <script>
+      const queueEl = document.getElementById("queue");
+      const nowPlayingEl = document.getElementById("now-playing");
+      const commandsSectionEl = document.getElementById("commands-section");
+      const commandsListEl = document.getElementById("commands-list");
+
+      function clearQueue() {
+        while (queueEl.firstChild) {
+          queueEl.removeChild(queueEl.firstChild);
+        }
+      }
+
+      function clearNowPlaying() {
+        while (nowPlayingEl.firstChild) {
+          nowPlayingEl.removeChild(nowPlayingEl.firstChild);
+        }
+      }
+
+      function clearCommands() {
+        while (commandsListEl.firstChild) {
+          commandsListEl.removeChild(commandsListEl.firstChild);
+        }
+      }
+
+      function renderQueueEmpty(message) {
+        clearQueue();
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = message;
+        queueEl.appendChild(empty);
+      }
+
+      function renderNowPlaying(nowPlaying) {
+        clearNowPlaying();
+        if (!nowPlaying || !nowPlaying.is_playing) {
+          const empty = document.createElement("div");
+          empty.className = "empty";
+          empty.textContent = "Sin reproduccion";
+          nowPlayingEl.appendChild(empty);
+          return;
+        }
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "now-playing";
+        wrapper.style.display = "flex";
+        wrapper.style.alignItems = "center";
+        wrapper.style.gap = "10px";
+
+        const coverUrl = nowPlaying.cover_url || "";
+        if (coverUrl) {
+          const cover = document.createElement("img");
+          cover.src = coverUrl;
+          cover.alt = "Portada";
+          cover.style.width = "64px";
+          cover.style.height = "64px";
+          cover.style.objectFit = "cover";
+          cover.style.borderRadius = "8px";
+          cover.style.flexShrink = "0";
+          wrapper.appendChild(cover);
+        }
+
+        const text = document.createElement("div");
+        text.style.display = "flex";
+        text.style.flexDirection = "column";
+        text.style.gap = "4px";
+
+        const label = document.createElement("div");
+        label.className = "now-playing-label";
+        label.textContent = "Ahora suena";
+
+        const title = document.createElement("div");
+        title.className = "now-playing-title";
+        title.textContent = nowPlaying.title || "Sin titulo";
+
+        const artist = document.createElement("div");
+        artist.className = "now-playing-artist";
+        artist.textContent = nowPlaying.artist || "";
+
+        text.appendChild(label);
+        text.appendChild(title);
+        text.appendChild(artist);
+        wrapper.appendChild(text);
+        nowPlayingEl.appendChild(wrapper);
+      }
+
+      function renderQueue(items, total) {
+        if (!items || items.length === 0) {
+          renderQueueEmpty("Sin solicitudes en cola");
+          return;
+        }
+
+        clearQueue();
+        items.forEach((item) => {
+          const badgeText = item.priority === "yes" ? "PRIORIDAD" : "NORMAL";
+
+          const row = document.createElement("div");
+          row.className = "queue-item";
+
+          const badge = document.createElement("div");
+          badge.className = "queue-badge";
+          badge.textContent = badgeText;
+
+          const info = document.createElement("div");
+          info.className = "queue-info";
+
+          const title = document.createElement("div");
+          title.className = "queue-title";
+          title.textContent = item.title || "";
+
+          const artist = document.createElement("div");
+          artist.className = "queue-artist";
+          artist.textContent = item.artist || "";
+
+          const user = document.createElement("div");
+          user.className = "queue-user";
+          user.textContent = `@${item.user || ""}`;
+
+          info.appendChild(title);
+          info.appendChild(artist);
+          row.appendChild(badge);
+          row.appendChild(info);
+          row.appendChild(user);
+          queueEl.appendChild(row);
+        });
+
+        if (typeof total === "number" && total > items.length) {
+          const more = document.createElement("div");
+          more.className = "queue-more";
+          more.textContent = `+${total - items.length} mas en cola`;
+          queueEl.appendChild(more);
+        }
+      }
+
+      function renderCommands(commands) {
+        clearCommands();
+
+        if (!commands || commands.length === 0) {
+          commandsSectionEl.hidden = true;
+          return;
+        }
+
+        commandsSectionEl.hidden = false;
+
+        commands.forEach((command) => {
+          const item = document.createElement("li");
+          item.className = "command-item";
+
+          if (command.icon) {
+            const icon = document.createElement("img");
+            icon.className = "gift-icon";
+            icon.src = command.icon;
+            icon.alt = "";
+            item.appendChild(icon);
+          }
+
+          const text = document.createElement("span");
+          text.className = "command-text";
+          text.textContent = command.text || "";
+          item.appendChild(text);
+
+          commandsListEl.appendChild(item);
+        });
+      }
+
+      async function fetchState() {
+        try {
+          const res = await fetch("/state", { cache: "no-store" });
+          const data = await res.json();
+          renderNowPlaying(data.now_playing);
+          renderQueue(data.queue, data.queue_total);
+          renderCommands(data.commands);
+        } catch (err) {
+          renderNowPlaying(null);
+          renderQueueEmpty("Conectando...");
+          renderCommands([]);
+        }
+      }
+
+      fetchState();
+      setInterval(fetchState, 5000);
+    </script>
+  </body>
+</html>
+
+
+

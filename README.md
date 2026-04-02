@@ -1,6 +1,6 @@
-﻿# Spotify con TiktokLive (pide tu canción en tus Live´s) 
+﻿# Spotify con TiktokLive
 
-Aplicación en Python para gestionar solicitudes de canciones desde TikTok Live y enviarlas a Spotify, con cola en memoria, modo configurable en tiempo real y overlay local.
+Es una aplicación donde los usuarios pueden agregar sus canciones en las transmisiones en vivo escribiendo en el chat del live `!play Canción - Artista` ó `!skip` para saltar canciones. La hice en Python para automatizar un bot que permite gestionar solicitudes de canciones desde TikTok Live y enviarlas a Spotify, con cola en memoria, modo configurable en tiempo real y overlay local.
 
 ## 1. Función de la aplicación
 
@@ -80,7 +80,7 @@ Notas:
 
 ## 7. Ejecución
 
-Desde `Spotify-TiktokLive-queue`:
+Desde `Spotify-TiktokLive-pide-tu-pista`:
 Abre CMD desde dentro de la carpeta donde están todos los archivos de esta APP (No hace falta abrir como Administrador)
 
 ```bash
@@ -95,20 +95,21 @@ Al iniciar:
 
 ## 8. Endpoints locales
 
-- `GET /` → Overlay principal.
-- `GET /state` → Estado JSON (cola, ahora suena, modo).
-- `GET/POST /panel` → Panel para cambiar modo.
-- `GET /health` → Respuesta simple: `OK`.
+- `GET /` -> Overlay principal.
+- `GET /state` -> Estado JSON (cola, ahora suena, modo).
+- `GET/POST /panel` -> Panel para cambiar modo.
+- `GET /health` -> Respuesta simple: `OK`.
 
 ## 8.1 Integración con TikTok Live Studio
 
-Para usar este overlay sin capturar toda la pantalla, necesitas agregar una fuente web en Live Studio.
+Para usar este overlay puedes capturar la pantalla en Live Studio y mostrar solo lo que los usuarios verán, que sería el overlay donde muestran las solicitudes de canciones y lo que está sonando.
+
+![Muestra](assets/overlay.jpg)
 
 Puntos importantes:
 
 1. La app se sirve en local (`http://127.0.0.1:5000`).
 2. Live Studio rechazan URLs locales o `http` y exigen `https` público.
-3. Si aparece `URL inválida`, no es un fallo del bot: es una restricción del cliente de Live Studio.
 
 ![MUESTRA:](assets/m2.gif)
 
@@ -144,22 +145,9 @@ Reglas activas:
 - `!play` funciona sin regalo.
 - `!skip` solo funciona para el host (`TIKTOK_USERNAME`).
 
-## 10. Panel de modos
+## 10. Reglas de comandos y validaciones
 
-Panel disponible en:
-
-- `http://127.0.0.1:5000/panel`
-
-Opciones actuales:
-
-1. **Modo 1 - Donación (regalos)**
-2. **Modo 2 - Gratis para todos**
-
-El cambio se aplica al momento y se persiste en `mode_config.json`.
-
-## 11. Reglas de comandos y validaciones
-
-### 11.1 Formato de `!play`
+### 10.1 Formato de `!play`
 
 Formato válido:
 
@@ -172,7 +160,7 @@ Detalles:
 - Se toleran guiones normales y guiones largos.
 - Si el formato es inválido, se registra como intento inválido.
 
-### 11.2 Ventanas y límites anti-spam
+### 10.2 Ventanas y límites anti-spam
 
 Configuración activa en `main.py` y `anti_spam.py`:
 
@@ -184,15 +172,15 @@ Configuración activa en `main.py` y `anti_spam.py`:
 - Intentos de `!play`: **3**.
 - Formato inválido: los 2 primeros no consumen intento; desde el 3º sí consume.
 
-### 11.3 Validaciones de las canciones
+### 10.3 Validaciones de las canciones
 
 - Duración máxima permitida: **5 minutos** (`MAX_DURATION_MS`).
 - Canciones explícitas: **permitidas**.
 - Bloqueo de duplicados por **20 minutos** (cola actual + recientes), salvo prioridad.
 
-## 12. Búsqueda y reproducción en Spotify
+## 11. Búsqueda y reproducción en Spotify
 
-### 12.1 Búsqueda
+### 11.1 Búsqueda
 
 Se usa búsqueda precisa con umbrales actuales:
 
@@ -201,7 +189,7 @@ Se usa búsqueda precisa con umbrales actuales:
 
 Si falla la búsqueda precisa, hay fallback a búsqueda amplia por popularidad.
 
-### 12.2 Reintentos ante errores transitorios
+### 11.2 Reintentos ante errores transitorios
 
 Para errores de red/servicio (429/5xx/timeouts), Spotify usa reintentos con backoff:
 
@@ -213,14 +201,14 @@ Durante esos casos se registra en log:
 
 - `Spotify no responde, reintentando...`
 
-## 13. Cola y prioridad
+## 12. Cola y prioridad
 
 - Cola en memoria con dos niveles: prioritaria y normal.
 - En overlay se muestran **máximo 5 elementos**.
 - Si hay más, aparece `+N más en cola`.
 - Cuando inicia una canción (detectada por polling), se elimina de la cola local por URL.
 
-## 14. Overlay actual
+## 13. Overlay actual
 
 Características actuales del overlay:
 
@@ -229,33 +217,32 @@ Características actuales del overlay:
 - Polling de estado cada **5 segundos** (`/state`).
 - Fondo visual definido por `overlay/static/style.css`.
 
-## 15. Seguridad de la información
+## 14. Seguridad de la información
 
-### 15.1 Credenciales
+### 14.1 Credenciales
 
 - Nunca publiques `.env`.
 - Nunca compartas `Client Secret`, tokens o API keys.
-- Evita subir capturas de consola con enlaces de autorización activos.
+- Evita subir capturas de consola con enlaces de autenticación activos.
 
-### 15.2 Exposición de la app
+### 14.2 Exposición de la app
 
 - Flask corre en `127.0.0.1` (solo local).
 - Recomendado: mantenerlo local si no necesitas exponer overlay fuera del equipo.
 - Si usas túneles públicos, asume mayor superficie de riesgo.
 
-### 15.3 Panel local
+### 14.3 Panel local
 
 - `/panel` no tiene autenticación.
 - Es seguro solo en contexto local (`127.0.0.1`).
 - No se recomienda exponer el panel directamente a internet.
 
-### 15.4 Buenas prácticas operativas
+### 14.4 Buenas prácticas operativas
 
-- Rotar credenciales solo cuando sea necesario (cambio de app, revocación o sospecha de filtración).
 - Actualizar dependencias de forma controlada y probar flujo completo después.
 - Revisar logs periódicamente para detectar desconexiones recurrentes.
 
-## 16. Logs y diagnóstico rápido
+## 15. Logs y diagnóstico rápido
 
 Casos comunes:
 
@@ -268,7 +255,7 @@ Casos comunes:
 
 El listener de TikTok incluye reconexión con backoff para minimizar caídas.
 
-## 17. Pruebas
+## 16. Pruebas
 
 El proyecto incluye pruebas unitarias en `tests/` para anti-spam, parser, mapeo de regalos y cola.
 
